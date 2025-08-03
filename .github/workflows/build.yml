@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every day at 00:00 UTC (08:00 CST)
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      BUILD_TOOLS_VERSION: "36.0.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+      - run: pip install -r requirements.txt
+      - run: ./build.py
+        id: build
+      - uses: stefanzweifel/git-auto-commit-action@v6
+        if: ${{ steps.build.outputs.changed == 'true' }}
+        with:
+          commit_message: "chore: bump version to ${{ steps.build.outputs.tag_name }}"
+          tagging_message: ${{ steps.build.outputs.tag_name }}
+      - uses: ncipollo/release-action@v1
+        if: ${{ steps.build.outputs.changed == 'true' }}
+        with:
+          tag: ${{ steps.build.outputs.tag_name }}
+          name: ${{ steps.build.outputs.tag_name }}
+          bodyFile: CHANGELOG.md
+          artifacts: "artifacts/*"
+          allowUpdates: true
