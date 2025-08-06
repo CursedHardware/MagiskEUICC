@@ -16,7 +16,7 @@ from repro_zipfile import ReproducibleZipFile
 ROOT_PATH = Path(__file__).parent
 ARTIFACT_PATH = ROOT_PATH / "artifacts"
 MAGISK_MODULE_PATH = ROOT_PATH / "magisk-module"
-UPDATE_JSON_PATH = ROOT_PATH / "update.json"
+MANIFEST_PATH = ROOT_PATH / "manifest.json"
 CHANGELOG_PATH = ROOT_PATH / "CHANGELOG.md"
 
 MAGISK_MODULE_BUNDLED_PATH = ARTIFACT_PATH / f"{MAGISK_MODULE_PATH.name}.zip"
@@ -65,7 +65,7 @@ class WorkflowRun(TypedDict):
     url: str
 
 
-class ManifestFile(TypedDict):
+class Manifest(TypedDict):
     version: str
     versionCode: int
     zipUrl: str
@@ -145,7 +145,7 @@ def build_module_prop(version: VersionInfo) -> str:
             f"Source Code: {OPENEUICC_REPO_URL}.",
             f"Magisk Module: {packager_repo_url}."
         ]),
-        "updateJson": os.path.join(packager_repo_url, "raw", GITHUB_REF, "update.json"),
+        "updateJson": os.path.join(packager_repo_url, "raw", GITHUB_REF, MANIFEST_PATH.name),
     }
     return "".join(
         f"{name}={value}\n"
@@ -153,7 +153,7 @@ def build_module_prop(version: VersionInfo) -> str:
     )
 
 
-def build_manifest_file(version: VersionInfo, head_sha: str) -> ManifestFile:
+def build_manifest_file(version: VersionInfo, head_sha: str) -> Manifest:
     release_path = os.path.join(GITHUB_SERVER_URL, GITHUB_REPOSITORY, "releases")
     return {
         "version": version.name,
@@ -205,8 +205,8 @@ def setup_github_output(**kwargs: Any) -> None:
 def is_changed(workflow_run: WorkflowRun) -> bool:
     if GITHUB_EVENT_NAME == "workflow_dispatch":
         return True
-    manifest = json.loads(UPDATE_JSON_PATH.read_text())
-    return workflow_run["head_sha"] != manifest.get("head_sha")
+    manifest: Manifest = json.loads(MANIFEST_PATH.read_text())
+    return workflow_run["head_sha"] != manifest["head_sha"]
 
 
 def main():
@@ -235,8 +235,8 @@ def main():
 
     build_magisk_module(version_info, MAGISK_MODULE_PATH, MAGISK_MODULE_BUNDLED_PATH)
 
-    update_json = json.dumps(build_manifest_file(version_info, head_sha), indent=2)
-    UPDATE_JSON_PATH.write_text(update_json + "\n")
+    manifest = json.dumps(build_manifest_file(version_info, head_sha), indent=2)
+    MANIFEST_PATH.write_text(manifest + "\n")
 
     with CHANGELOG_PATH.open("w") as fp:
         fp.write(CHANGELOG.format(
