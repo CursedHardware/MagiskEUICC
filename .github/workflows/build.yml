@@ -11,8 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      BUILD_TOOLS_VERSION: "36.0.0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,7 +18,7 @@ jobs:
           python-version: "3.13"
       - uses: android-actions/setup-android@v3
         with:
-          packages: "build-tools;${{ env.BUILD_TOOLS_VERSION }}"
+          packages: "build-tools;36.0.0"
       - run: pip install -r requirements.txt
       - run: ./build.py
         id: build

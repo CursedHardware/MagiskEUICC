@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from subprocess import check_output, list2cmdline
-from typing import Any
+from typing import Any, Optional, TypedDict, List
 from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 
 import requests
@@ -56,11 +56,21 @@ Update to the commit with hash [{head_sha}]({head_sha_url}) of OpenEUICC reposit
 """
 
 
-@dataclass(frozen=True)
-class WorkflowRun:
+class WorkflowRun(TypedDict):
+    name: str
+    status: str
+    head_branch: str
     head_sha: str
     run_number: int
     url: str
+
+
+class ManifestFile(TypedDict):
+    version: str
+    versionCode: int
+    zipUrl: str
+    changelog: str
+    head_sha: str
 
 
 @dataclass(frozen=True)
@@ -74,13 +84,17 @@ class VersionInfo:
         return self.name.removeprefix("unpriv-")
 
 
-def get_first_workflow_run() -> WorkflowRun | None:
+def get_first_workflow_run() -> Optional[WorkflowRun]:
     response = requests.get(OPENEUICC_WORKFLOW_RUNS_API_URL, params={"page": 1, "limit": 10})
     response.raise_for_status()
-    payload: dict[str, Any] = response.json()
+
+    class Payload(TypedDict):
+        workflow_runs: List[WorkflowRun]
+
+    payload: Payload = response.json()
     runs = (
-        WorkflowRun(head_sha=run["head_sha"], run_number=run["run_number"], url=run["url"])
-        for run in payload.get("workflow_runs", [])
+        run
+        for run in payload["workflow_runs"]
         if run["name"] == "build-debug" and
            run["status"] == "success" and
            run["head_branch"] == OPENEUICC_BRANCH
@@ -106,8 +120,7 @@ def get_file_content(url: str) -> bytes:
 
 
 def get_version_info() -> VersionInfo:
-    version = os.environ.get("BUILD_TOOLS_VERSION", "latest")
-    program = Path(os.environ["ANDROID_HOME"]) / "build-tools" / version / "aapt"
+    program = next(Path(os.environ["ANDROID_HOME"]).rglob("aapt"))
     output = check_output([program, "dump", "badging", str(OPENEUICC_APP_PATH)]).decode("utf-8")
     package_name = re.search(r"name='(?P<name>[^']+)'", output)
     version_name = re.search(r"versionName='(?P<name>[^']+)'", output)
@@ -140,7 +153,7 @@ def build_module_prop(version: VersionInfo) -> str:
     )
 
 
-def build_update_json(version: VersionInfo, head_sha: str) -> dict[str, str]:
+def build_manifest_file(version: VersionInfo, head_sha: str) -> ManifestFile:
     release_path = os.path.join(GITHUB_SERVER_URL, GITHUB_REPOSITORY, "releases")
     return {
         "version": version.name,
@@ -179,12 +192,12 @@ def build_magisk_module(version: VersionInfo, base_path: Path, bundle_path: Path
         zip_file.writestr("module.prop", build_module_prop(version))
 
 
-def setup_github_output(**kwargs: str) -> None:
+def setup_github_output(**kwargs: Any) -> None:
     if "GITHUB_OUTPUT" not in os.environ:
         return
     with open(os.environ["GITHUB_OUTPUT"], "w") as fp:
         fp.writelines(
-            f"{name}={value}\n"
+            f"{name}={value if isinstance(value, str) else json.dumps(value)}\n"
             for name, value in kwargs.items()
         )
 
@@ -193,7 +206,7 @@ def is_changed(workflow_run: WorkflowRun) -> bool:
     if GITHUB_EVENT_NAME == "workflow_dispatch":
         return True
     manifest = json.loads(UPDATE_JSON_PATH.read_text())
-    return workflow_run.head_sha != manifest.get("head_sha")
+    return workflow_run["head_sha"] != manifest.get("head_sha")
 
 
 def main():
@@ -201,34 +214,38 @@ def main():
 
     if workflow_run is None:
         print("No available workflow run found.")
-        setup_github_output(changed="false")
+        setup_github_output(changed=False)
         exit(0)
 
     if not is_changed(workflow_run):
         print("No changes detected.")
-        setup_github_output(changed="false")
+        setup_github_output(changed=False)
         exit(0)
 
-    print("Latest workflow run number:", workflow_run.run_number)
-    print("Latest workflow run HEAD:", workflow_run.head_sha)
+    workflow_url = workflow_run["url"]
+    workflow_run_number = workflow_run["run_number"]
+    head_sha = workflow_run["head_sha"]
 
-    download_artifact(workflow_run.url, OPENEUICC_ARTIFACT_NAME)
+    print("Latest workflow run number:", workflow_run_number)
+    print("Latest workflow run HEAD:", head_sha)
+
+    download_artifact(workflow_url, OPENEUICC_ARTIFACT_NAME)
 
     version_info = get_version_info()
 
     build_magisk_module(version_info, MAGISK_MODULE_PATH, MAGISK_MODULE_BUNDLED_PATH)
 
-    update_json = json.dumps(build_update_json(version_info, workflow_run.head_sha), indent=2)
+    update_json = json.dumps(build_manifest_file(version_info, head_sha), indent=2)
     UPDATE_JSON_PATH.write_text(update_json + "\n")
 
     with CHANGELOG_PATH.open("w") as fp:
         fp.write(CHANGELOG.format(
-            head_sha=workflow_run.head_sha,
-            head_sha_url=os.path.join(OPENEUICC_REPO_URL, "src", "commit", workflow_run.head_sha),
+            head_sha=head_sha,
+            head_sha_url=os.path.join(OPENEUICC_REPO_URL, "src", "commit", head_sha),
         ))
 
     setup_github_output(
-        changed="true",
+        changed=True,
         tag_name=version_info.tag_name,
     )
 
