@@ -81,7 +81,9 @@ class VersionInfo:
 
     @property
     def tag_name(self):
-        return self.name.removeprefix("unpriv-")
+        return self.name.removeprefix("unpriv-") \
+            .removesuffix("-priv") \
+            .removesuffix("-unpriv")
 
 
 def get_first_workflow_run() -> Optional[WorkflowRun]:
