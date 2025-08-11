@@ -1,7 +1,7 @@
 {
   "version": "v1.3.0-30-ga8b7482-priv",
   "versionCode": 1754856649,
-  "zipUrl": "https://github.com/CursedHardware/MagiskEUICC/releases/download/v1.3.0-30-ga8b7482-priv/magisk-module.zip",
-  "changelog": "https://github.com/CursedHardware/MagiskEUICC/releases/tag/v1.3.0-30-ga8b7482-priv",
+  "zipUrl": "https://github.com/CursedHardware/MagiskEUICC/releases/download/v1.3.0-30-ga8b7482/magisk-module.zip",
+  "changelog": "https://github.com/CursedHardware/MagiskEUICC/releases/tag/v1.3.0-30-ga8b7482",
   "head_sha": "a8b7482afb98236c591912dc24524da7543bbf59"
 }
