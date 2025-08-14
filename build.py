@@ -32,10 +32,6 @@ OPENEUICC_ARTIFACT_NAME = "Debug APKs"
 
 OPENEUICC_REPOSITORY = os.path.join(OPENEUICC_ACTOR, OPENEUICC_APP_NAME)
 OPENEUICC_REPO_URL = os.path.join(OPENEUICC_BASE_URL, OPENEUICC_REPOSITORY)
-OPENEUICC_PERMS_URL = os.path.join(
-    OPENEUICC_BASE_URL, OPENEUICC_REPOSITORY, "raw", "branch", OPENEUICC_BRANCH,
-    "privapp_whitelist_im.angry.openeuicc.xml"
-)
 OPENEUICC_WORKFLOW_RUNS_API_URL = os.path.join(
     OPENEUICC_BASE_URL, "api", "v1", "repos", OPENEUICC_REPOSITORY, "actions", "tasks"
 )
@@ -166,7 +162,7 @@ def build_manifest_file(version: VersionInfo, head_sha: str) -> Manifest:
     }
 
 
-def build_magisk_module(version: VersionInfo, base_path: Path, bundle_path: Path) -> None:
+def build_magisk_module(head_sha: str, version: VersionInfo, base_path: Path, bundle_path: Path) -> None:
     print("Building Magisk module at", bundle_path.relative_to(GITHUB_WORKSPACE))
 
     bundle_path.unlink(missing_ok=True)
@@ -177,13 +173,14 @@ def build_magisk_module(version: VersionInfo, base_path: Path, bundle_path: Path
     system_ext_path = Path("system") / "system_ext"
     app_path = system_ext_path / "priv-app" / OPENEUICC_APP_NAME / f"{OPENEUICC_APP_NAME}.apk"
     perms_path = system_ext_path / "etc" / "permissions" / f"privapp_whitelist_{pkg_name}.xml"
+    perms_url = os.path.join(OPENEUICC_REPO_URL, "raw", head_sha, "privapp_whitelist_im.angry.openeuicc.xml")
 
     with ReproducibleZipFile(bundle_path, "w", compression=ZIP_DEFLATED, compresslevel=9) as zip_file:
         zip_file.writestr(str(meta_info_path / "update-binary"), get_file_content(MODULE_INSTALLER_URL))
         zip_file.writestr(str(meta_info_path / "updater-script"), "#MAGISK\n", compress_type=ZIP_STORED)
 
         zip_file.writestr(str(app_path), OPENEUICC_APP_PATH.read_bytes(), compress_type=ZIP_STORED)
-        zip_file.writestr(str(perms_path), get_file_content(OPENEUICC_PERMS_URL))
+        zip_file.writestr(str(perms_path), get_file_content(perms_url))
 
         zip_file.writestr("customize.sh", customize_script_path.read_text().format(
             PKG_NAME=pkg_name,
@@ -235,7 +232,7 @@ def main():
 
     version_info = get_version_info()
 
-    build_magisk_module(version_info, MAGISK_MODULE_PATH, MAGISK_MODULE_BUNDLED_PATH)
+    build_magisk_module(head_sha, version_info, MAGISK_MODULE_PATH, MAGISK_MODULE_BUNDLED_PATH)
 
     manifest = json.dumps(build_manifest_file(version_info, head_sha), indent=2)
     MANIFEST_PATH.write_text(manifest + "\n")
