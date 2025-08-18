@@ -1,7 +1,7 @@
 {
-  "version": "v1.3.0-34-g9e40232-priv",
-  "versionCode": 1755391672,
-  "zipUrl": "https://github.com/CursedHardware/MagiskEUICC/releases/download/v1.3.0-34-g9e40232/magisk-module.zip",
-  "changelog": "https://github.com/CursedHardware/MagiskEUICC/releases/tag/v1.3.0-34-g9e40232",
-  "head_sha": "9e40232ed03dce58e35ca1758246d382ffec78a5"
+  "version": "v1.3.0-35-g915a056-priv",
+  "versionCode": 1755438274,
+  "zipUrl": "https://github.com/CursedHardware/MagiskEUICC/releases/download/v1.3.0-35-g915a056/magisk-module.zip",
+  "changelog": "https://github.com/CursedHardware/MagiskEUICC/releases/tag/v1.3.0-35-g915a056",
+  "head_sha": "915a05634b552e06cc30b48cda2da264fe5f75e4"
 }
