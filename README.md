@@ -1,5 +1,6 @@
 # MagiskEUICC
 
+[![Main Downloads][LATEST-RELEASE-COUNT-BADGE]][LATEST-RELEASE]
 [![Latest Release][LATEST-RELEASE-BADGE]][LATEST-RELEASE]
 [![GPLv3 LICENSE][LICENSE-BADGE]](LICENSE.txt)
 
@@ -38,4 +39,5 @@ Special thanks to the following projects that made this possible:
 [LATEST-RELEASE]: https://github.com/CursedHardware/MagiskEUICC/releases/latest
 [LATEST-RELEASE-BADGE]: https://img.shields.io/github/v/release/CursedHardware/MagiskEUICC?label=Latest%20Release
 [LATEST-RELEASE-MODULE]: https://github.com/CursedHardware/MagiskEUICC/releases/latest/download/magisk-module.zip
+[LATEST-RELEASE-COUNT-BADGE]: https://img.shields.io/github/downloads/CursedHardware/MagiskEUICC/total?label=Main%20Repo%20Downloads
 [LICENSE-BADGE]: https://img.shields.io/badge/License-GPLv3-blue.svg
