@@ -1,7 +1,6 @@
 {
-  "version": "v1.3.0-44-gbf30f14-priv",
-  "versionCode": 1757875864,
-  "zipUrl": "https://github.com/CursedHardware/MagiskEUICC/releases/download/v1.3.0-44-gbf30f14/magisk-module.zip",
-  "changelog": "https://github.com/CursedHardware/MagiskEUICC/releases/tag/v1.3.0-44-gbf30f14",
-  "head_sha": "bf30f1478c01c32c0093bb75ac128c6f7eb20842"
+  "version": "v1.4.0-5-gc74c1f3",
+  "versionCode": 1759408073,
+  "zipUrl": "https://gitea.angry.im/PeterCxy/OpenEUICC/actions/runs/426/artifacts/magisk-debug",
+  "changelog": "https://gitea.angry.im/PeterCxy/OpenEUICC/commits/branch/master"
 }
